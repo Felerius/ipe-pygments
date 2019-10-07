@@ -21,7 +21,7 @@ function ensurePreamble(model)
   if preamble:len() > 0 then
     preamble = preamble .. '\n\n'
   end
-  preamble = preamble .. preamble_begin_marker .. '\n' .. use_packages .. '\n' ..  '%%% END PYGMENTS PREAMBLE %%%\n\n'
+  preamble = preamble .. preamble_begin_marker .. '\n' .. use_packages .. '\n' .. defs .. '%%% END PYGMENTS PREAMBLE %%%\n\n'
   model.doc:setProperties({preamble=preamble})
   return true
 end
