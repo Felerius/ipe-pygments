@@ -84,10 +84,8 @@ end
 function doFormat(model, obj, source_code, language, action_label)
   local result = encodeInput(language, source_code)
 
-  local tmp_in, tmp_err1 = _G.os.tmpname()
-  if not tmp_in then model:warning('Failed to create temp file: ' .. tmp_err1) return end
-  local tmp_out, tmp_err2 = _G.os.tmpname()
-  if not tmp_in then model:warning('Failed to create temp file: ' .. tmp_err2) return end
+  local tmp_in = config.latexdir .. 'ipe-pygments_tmp-in'
+  local tmp_out = config.latexdir .. 'ipe-pygments_tmp-out'
 
   local file_in, file_in_err = _G.io.open(tmp_in, 'w')
   if not file_in then model:warning('Failed to open temp file ' .. tmp_in .. ': ' .. file_in_err) return end
