@@ -14,9 +14,13 @@ function ensurePreamble(model)
   if preamble:find(preamble_begin_marker, 1, true) then return true end
 
   if not prefs.pygments.python then model:warning('Missing setting prefs.pygments.python') return false end
-  local p = assert(_G.io.popen(prefs.pygments.python .. ' -c "' .. get_preamble_py_code .. '"', 'r'))
-  local defs = p:read('*a')
-  p:close()
+
+  local p, open_err = _G.io.popen(prefs.pygments.python .. ' -c "' .. get_preamble_py_code .. '"', 'r')
+  if not p then model:warning('Failed to execute pygment python: ' .. model_err) return false end
+  local defs, read_err = assert(p:read('*a'))
+  if not defs then model:warning('Failed to read from python process: ' .. read_err) return false end
+  local close, close_err = p:close()
+  if not close then model:warning('Failed to close python process: ' .. close_err) return false end
 
   if preamble:len() > 0 then
     preamble = preamble .. '\n\n'
@@ -80,19 +84,33 @@ end
 function doFormat(model, obj, source_code, language, action_label)
   local result = encodeInput(language, source_code)
 
-  local tmp_in = _G.os.tmpname()
-  local tmp_out = _G.os.tmpname()
+  local tmp_in, tmp_err1 = _G.os.tmpname()
+  if not tmp_in then model:warning('Failed to create temp file: ' .. tmp_err1) return end
+  local tmp_out, tmp_err2 = _G.os.tmpname()
+  if not tmp_in then model:warning('Failed to create temp file: ' .. tmp_err2) return end
 
-  local file_in = _G.io.open(tmp_in, 'w')
-  file_in:write(source_code)
-  file_in:close()
+  local file_in, file_in_err = _G.io.open(tmp_in, 'w')
+  if not file_in then model:warning('Failed to open temp file ' .. tmp_in .. ': ' .. file_in_err) return end
+  local write, write_err = file_in:write(source_code)
+  if not write then model:warning('Failed to write to temp file: ' .. write_err) return end
+  local close1, close1_err = file_in:close()
+  if not close1 then model:warning('Failed to close temp file: ' .. close1_err) return end
 
   if not prefs.pygments.pygmentize then model:warning('Missing settings prefs.pygments.pygmentize') return end
   _G.os.execute(prefs.pygments.pygmentize .. ' -l ' .. language .. ' -f latex -o ' .. tmp_out .. ' ' .. tmp_in)
 
-  local file_out = _G.io.open(tmp_out, 'r')
-  result = result .. file_out:read('*a')
-  file_out:close()
+  local file_out, file_out_err = _G.io.open(tmp_out, 'r')
+  if not file_out then model:warning('Failed to open temp file ' .. tmp_out .. ': ' .. file_out_err) return end
+  local pygments_code, read_err = file_out:read('*a')
+  if not pygments_code then model:warning('Failed to read from temp file: ' .. read_err) return end
+  result = result .. pygments_code
+  local close2, close2_err = file_out:close()
+  if not close2 then model:warning('Failed to close temp file: ' .. close2_err) return end
+
+  local remove1, remove1_err = _G.os.remove(tmp_in)
+  if not remove1 then model:warning('Failed to delete temp file ' .. tmp_in .. ': ' .. remove1_err) return end
+  local remove2, remove2_err = _G.os.remove(tmp_out)
+  if not remove2 then model:warning('Failed to delete temp file ' .. tmp_out .. ': ' .. remove2_err) return end
 
   local t = {
     label=action_label,
