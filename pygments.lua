@@ -55,10 +55,10 @@ function recoverInput(model, latex)
   local language = latex:match('%%%%%% PYGMENTS LANGUAGE: (%w+)')
   if not language then return end
 
-  local _, i = latex:find('%%% PYGMENTS SOURCE CODE BEGIN %%%\n', 1, true)
+  local _, i = latex:find('%%%%%% PYGMENTS SOURCE CODE BEGIN %%%%%%\r?\n', 1)
   if not i then return end
 
-  local j = latex:find('%%% PYGMENTS SOURCE CODE END %%%\n', i + 1, true)
+  local j = latex:find('%%%%%% PYGMENTS SOURCE CODE END %%%%%%\r?\n', i + 1)
   local commented_code = latex:sub(i + 1, j - 1)
   local code = nil
   for s in commented_code:gmatch('%% ([^\n]*)\n') do
